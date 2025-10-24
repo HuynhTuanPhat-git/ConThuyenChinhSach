@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Con Thuyền Chính Sách ⛵</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .game-content {
+            padding: 30px;
+        }
+
+        /* Game Canvas */
+        .game-canvas {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(180deg, #87CEEB 0%, #4A90E2 100%);
+            overflow: hidden;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .game-boat {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3em;
+            z-index: 10;
+            transition: left 0.1s ease;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        .game-obstacle {
+            position: absolute;
+            font-size: 2.5em;
+            z-index: 5;
+        }
+
+        .game-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 60px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,50 Q300,10 600,50 T1200,50 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.3)"/></svg>') repeat-x;
+            animation: wave 8s linear infinite;
+            z-index: 8;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .game-paused {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+        }
+
+        /* HUD */
+        .controls-hint {
+            text-align: center;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .stage-display {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .game-hud {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .hud-stat {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .hud-stat-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+
+        .hud-stat-value {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .hud-stat-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .hud-stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+        }
+
+        .balance-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .balance-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .balance-scale {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+        }
+
+        .balance-track {
+            flex: 1;
+            height: 28px;
+            background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+            border-radius: 14px;
+            position: relative;
+        }
+
+        .balance-pointer {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 40px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 3px;
+            transition: left 0.5s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+
+        .balance-pointer::after {
+            content: '⛵';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9em;
+        }
+
+        /* Minigame Modal */
+        .minigame-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .minigame-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .minigame-timer {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .minigame-question {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            border-radius: 15px;
+            margin-bottom: 18px;
+        }
+
+        .minigame-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .minigame-description {
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
+        .minigame-relation {
+            background: rgba(255,255,255,0.2);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.82em;
+            margin-top: 8px;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .choice-btn {
+            background: white;
+            color: #333;
+            padding: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .choice-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .choice-consequence {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* Repair Minigames */
+        .repair-game {
+            display: none;
+        }
+
+        .repair-grid, .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .repair-cell, .memory-card {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .repair-cell {
+            background: #e9ecef;
+            border: 3px solid #dee2e6;
+        }
+
+        .repair-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .repair-cell.hole {
+            background: #dc3545;
+            border-color: #c82333;
+        }
+
+        .repair-cell.fixed {
+            background: #28a745;
+            border-color: #218838;
+        }
+
+        .memory-card {
+            background: #667eea;
+            border: 3px solid #5a67d8;
+            color: transparent;
+        }
+
+        .memory-card:hover {
+            transform: scale(1.05);
+        }
+
+        .memory-card.flipped {
+            background: white;
+            border-color: #667eea;
+            color: #333;
+        }
+
+        .memory-card.matched {
+            background: #28a745;
+            border-color: #218838;
+            color: white;
+            cursor: default;
+        }
+
+        .sequence-display {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .sequence-btn {
+            aspect-ratio: 1;
+            background: #e9ecef;
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sequence-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .sequence-btn.active {
+            background: #667eea;
+            border-color: #5a67d8;
+            transform: scale(0.95);
+        }
+
+        .sequence-btn.correct {
+            background: #28a745;
+            border-color: #218838;
+        }
+
+        .sequence-btn.wrong {
+            background: #dc3545;
+            border-color: #c82333;
+        }
+
+        /* Result Modal */
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .result-content {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            max-width: 480px;
+            text-align: center;
+            animation: slideIn 0.5s;
+        }
+
+        .result-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #667eea;
+        }
+
+        .result-message {
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 35px;
+        }
+
+        .start-title {
+            font-size: 2.2em;
+            margin-bottom: 18px;
+            color: #667eea;
+        }
+
+        .start-description {
+            text-align: left;
+            line-height: 1.7;
+            color: #666;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>⛵ Con Thuyền Chính Sách</h1>
+            <p>Mô phỏng quá trình xây dựng chủ nghĩa xã hội ở Việt Nam</p>
+        </div>
+
+        <div class="game-content">
+            <div id="startScreen" class="start-screen">
+                <div class="start-title">🎮 Chào mừng đến với trò chơi!</div>
+                <div class="start-description">
+                    <p><strong>Nhiệm vụ của bạn:</strong> Điều khiển thuyền tránh chướng ngại vật và trả lời các câu hỏi chính sách!</p>
+                    <p><strong>Cách chơi:</strong></p>
+                    <p>🎮 Phím ← → hoặc A D để di chuyển thuyền<br>
+                    ⚠️ Tránh chướng ngại vật: 🗻 đá, 🌊 sóng, ⚠️ nguy hiểm<br>
+                    📋 Mỗi 5 giây sẽ có 1 chặng câu hỏi chính sách (tổng 10 chặng)<br>
+                    💥 Đụng chướng ngại = hoàn thành minigame sửa chữa<br>
+                    ❤️ Có 3 mạng - hết mạng hoặc mất cân bằng = thua!</p>
+                    <p><strong>Chiến thắng:</strong> Hoàn thành 10 chặng với cân bằng (-4 đến +4)</p>
+                </div>
+                <button class="btn" onclick="startGame()">🚀 Bắt đầu hành trình</button>
+            </div>
+
+            <div id="gameScreen" class="hidden">
+                <div class="controls-hint">
+                    🎮 Điều khiển: Phím ← → hoặc A D để di chuyển thuyền
+                </div>
+
+                <div class="stage-display">
+                    📍 Chặng <span id="currentStage">1</span>/10
+                </div>
+
+                <div class="game-hud">
+                    <div class="hud-stat">
+                        <div class="hud-stat-header">
+                            <span>❤️</span>
+                            <span>Ổn định XH</span>
+                        </div>
+                        <div class="hud-stat-value" id="stabilityValue">10</div>
+                        <div class="hud-stat-bar">
+                            <div class="hud-stat-fill" id="stabilityBar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="hud-stat">
+                        <div class="hud-stat-header">
+                            <span>💰</span>
+                            <span>Ngân sách</span>
+                        </div>
+                        <div class="hud-stat-value" id="budgetValue">10</div>
+                        <div class="hud-stat-bar">
+                            <div class="hud-stat-fill" id="budgetBar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="hud-stat">
+                        <div class="hud-stat-header">
+                            <span>💚</span>
+                            <span>Mạng</span>
+                        </div>
+                        <div class="hud-stat-value" id="healthValue">3</div>
+                    </div>
+                </div>
+
+                <div class="balance-display">
+                    <div class="balance-title">⚖️ Cân bằng Chính sách</div>
+                    <div class="balance-scale">
+                        <span>Bao cấp</span>
+                        <div class="balance-track">
+                            <div class="balance-pointer" id="balancePointer"></div>
+                        </div>
+                        <span>Thị trường</span>
+                    </div>
+                </div>
+
+                <div class="game-canvas" id="gameCanvas">
+                    <div class="game-boat" id="gameBoat">⛵</div>
+                    <div class="game-wave"></div>
+                    <div class="game-paused" id="gamePaused">⏸️ TẠM DỪNG</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minigame Modal -->
+    <div class="minigame-modal" id="minigameModal">
+        <div class="minigame-content">
+            <div class="minigame-timer">⏱️ <span id="minigameTimer">30</span>s</div>
+            
+            <!-- Question Minigame -->
+            <div id="questionGame">
+                <div class="minigame-question">
+                    <div class="minigame-title" id="minigameTitle"></div>
+                    <div class="minigame-description" id="minigameDescription"></div>
+                    <div class="minigame-relation" id="minigameRelation"></div>
+                </div>
+                <div class="choices" id="minigameChoices"></div>
+            </div>
+
+            <!-- Repair Minigame -->
+            <div id="repairGame" class="repair-game">
+                <div class="minigame-question">
+                    <div class="minigame-title">🔧 Vá lỗ thủng!</div>
+                    <div class="minigame-description">Nhấp các lỗ thủng (đỏ 💥) để vá!</div>
+                </div>
+                <div class="repair-grid" id="repairGrid"></div>
+            </div>
+
+            <!-- Memory Game -->
+            <div id="memoryGame" class="repair-game">
+                <div class="minigame-question">
+                    <div class="minigame-title">🧠 Trò chơi trí nhớ!</div>
+                    <div class="minigame-description">Tìm các cặp biểu tượng giống nhau!</div>
+                </div>
+                <div class="memory-grid" id="memoryGrid"></div>
+            </div>
+
+            <!-- Sequence Game -->
+            <div id="sequenceGame" class="repair-game">
+                <div class="minigame-question">
+                    <div class="minigame-title">🎯 Nhớ trình tự!</div>
+                    <div class="minigame-description">Nhớ và lặp lại trình tự các nút!</div>
+                </div>
+                <div class="sequence-display" id="sequenceDisplay"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-message" id="resultMessage"></div>
+            <button class="btn" onclick="restartGame()">🔄 Chơi lại</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            health: 3,
+            stability: 10,
+            budget: 10,
+            balance: 0,
+            stage: 1,
+            boatPosition: 50,
+            isPlaying: false,
+            isPaused: false,
+            obstacles: [],
+            timeSinceLastQuestion: 0
+        };
+
+        let gameInterval, obstacleInterval, questionInterval, minigameTimer;
+        let minigameTimeLeft, memoryFlipped = [], memoryMatched = 0;
+        let sequencePattern = [], sequenceInput = [], sequenceShowing = false;
+
+        const obstacleTypes = ['🗻', '🌊', '⚠️'];
+        const memoryIcons = ['🌟', '🎯', '🏆', '🎨', '🎭', '🎪', '🎬', '🎮'];
+        
+        const policyQuestions = [
+            {
+                title: "Giá dầu thế giới tăng 40%",
+                relation: "KTTT vs Định hướng XHCN",
+                description: "Giá dầu tăng đột biến khiến giá xăng trong nước chịu áp lực.",
+                choices: [
+                    { text: "🏪 Để thị trường tự quyết định", consequence: "⚖️ +3 | 💰 +1 | ❤️ -3", effect: { balance: 3, budget: 1, stability: -3 } },
+                    { text: "⚖️ Điều tiết hỗn hợp", consequence: "⚖️ 0 | 💰 -1 | ❤️ -1", effect: { balance: 0, budget: -1, stability: -1 } },
+                    { text: "🛡️ Xả quỹ bình ổn", consequence: "⚖️ -3 | 💰 -3 | ❤️ +1", effect: { balance: -3, budget: -3, stability: 1 } }
+                ]
+            },
+            {
+                title: "Đề xuất tăng học phí 30%",
+                relation: "Tăng trưởng KT vs Công bằng XH",
+                description: "Trường đại học đề xuất tăng học phí để tự chủ tài chính.",
+                choices: [
+                    { text: "✅ Duyệt tăng học phí", consequence: "⚖️ +2 | 💰 +1 | ❤️ -2", effect: { balance: 2, budget: 1, stability: -2 } },
+                    { text: "⚖️ Tăng một phần", consequence: "⚖️ 0 | 💰 0 | ❤️ 0", effect: { balance: 0, budget: 0, stability: 0 } },
+                    { text: "❌ Giữ nguyên", consequence: "⚖️ -2 | 💰 -2 | ❤️ +1", effect: { balance: -2, budget: -2, stability: 1 } }
+                ]
+            },
+            {
+                title: "DN FDI xả thải ô nhiễm",
+                relation: "Tăng trưởng vs Môi trường",
+                description: "Doanh nghiệp nước ngoài xả thải nghiêm trọng, dân biểu tình.",
+                choices: [
+                    { text: "🚫 Đóng cửa ngay", consequence: "⚖️ -1 | 💰 -2 | ❤️ +3", effect: { balance: -1, budget: -2, stability: 3 } },
+                    { text: "⚠️ Phạt và khắc phục", consequence: "⚖️ 0 | 💰 +1 | ❤️ 0", effect: { balance: 0, budget: 1, stability: 0 } },
+                    { text: "💼 Đàm phán dài hạn", consequence: "⚖️ +1 | 💰 0 | ❤️ -1", effect: { balance: 1, budget: 0, stability: -1 } }
+                ]
+            },
+            {
+                title: "Khủng hoảng lương giáo viên",
+                relation: "Ngân sách vs Công bằng XH",
+                description: "Giáo viên đình công đòi tăng lương 25%.",
+                choices: [
+                    { text: "💵 Tăng theo yêu cầu", consequence: "⚖️ -2 | 💰 -3 | ❤️ +3", effect: { balance: -2, budget: -3, stability: 3 } },
+                    { text: "📊 Tăng từng bước", consequence: "⚖️ 0 | 💰 -1 | ❤️ +1", effect: { balance: 0, budget: -1, stability: 1 } },
+                    { text: "🚫 Từ chối", consequence: "⚖️ +2 | 💰 +1 | ❤️ -3", effect: { balance: 2, budget: 1, stability: -3 } }
+                ]
+            },
+            {
+                title: "Tư nhân hóa bệnh viện",
+                relation: "KT thị trường vs Y tế công",
+                description: "Đề xuất cho tư nhân đầu tư y tế.",
+                choices: [
+                    { text: "✅ Cho phép", consequence: "⚖️ +2 | 💰 +2 | ❤️ -2", effect: { balance: 2, budget: 2, stability: -2 } },
+                    { text: "⚖️ Công tư kết hợp", consequence: "⚖️ 0 | 💰 +1 | ❤️ 0", effect: { balance: 0, budget: 1, stability: 0 } },
+                    { text: "❌ Giữ y tế công", consequence: "⚖️ -2 | 💰 -2 | ❤️ +2", effect: { balance: -2, budget: -2, stability: 2 } }
+                ]
+            },
+            {
+                title: "Thu hồi đất KCN",
+                relation: "Phát triển KT vs Quyền nông dân",
+                description: "Cần thu hồi 500ha đất, nông dân phản đối.",
+                choices: [
+                    { text: "💰 Đền bù cao x3", consequence: "⚖️ -1 | 💰 -3 | ❤️ +3", effect: { balance: -1, budget: -3, stability: 3 } },
+                    { text: "📝 Theo quy định", consequence: "⚖️ 0 | 💰 -1 | ❤️ -1", effect: { balance: 0, budget: -1, stability: -1 } },
+                    { text: "🚫 Hủy dự án", consequence: "⚖️ -1 | 💰 0 | ❤️ +1", effect: { balance: -1, budget: 0, stability: 1 } }
+                ]
+            },
+            {
+                title: "Nợ công tăng cao 60% GDP",
+                relation: "Phát triển vs Ổn định tài chính",
+                description: "Nợ cao, dự án dở dang cần vốn.",
+                choices: [
+                    { text: "📉 Thắt chặt chi tiêu", consequence: "⚖️ +1 | 💰 +2 | ❤️ -2", effect: { balance: 1, budget: 2, stability: -2 } },
+                    { text: "💳 Vay thêm", consequence: "⚖️ +1 | 💰 -1 | ❤️ +1", effect: { balance: 1, budget: -1, stability: 1 } }
+                ]
+            },
+            {
+                title: "Đình công tại KCN",
+                relation: "Môi trường ĐT vs Quyền CN",
+                description: "Công nhân đòi tăng lương 20%.",
+                choices: [
+                    { text: "✅ Chấp nhận", consequence: "⚖️ -2 | 💰 -1 | ❤️ +3", effect: { balance: -2, budget: -1, stability: 3 } },
+                    { text: "📊 Đàm phán", consequence: "⚖️ 0 | 💰 -1 | ❤️ +1", effect: { balance: 0, budget: -1, stability: 1 } },
+                    { text: "⚖️ Giữ nguyên", consequence: "⚖️ +1 | 💰 +1 | ❤️ -3", effect: { balance: 1, budget: 1, stability: -3 } }
+                ]
+            },
+            {
+                title: "Khủng hoảng nhà ở",
+                relation: "BĐS vs Nhà ở XH",
+                description: "Giá nhà tăng vọt, người nghèo không mua được.",
+                choices: [
+                    { text: "🏘️ Xây nhà XH", consequence: "⚖️ -2 | 💰 -3 | ❤️ +3", effect: { balance: -2, budget: -3, stability: 3 } },
+                    { text: "💰 Hỗ trợ vay", consequence: "⚖️ 0 | 💰 -1 | ❤️ +1", effect: { balance: 0, budget: -1, stability: 1 } },
+                    { text: "🏗️ Thị trường tự do", consequence: "⚖️ +2 | 💰 +1 | ❤️ -2", effect: { balance: 2, budget: 1, stability: -2 } }
+                ]
+            },
+            {
+                title: "Cải cách hành chính",
+                relation: "Hiệu quả vs Chi phí",
+                description: "Số hóa dịch vụ, cắt 30% biên chế.",
+                choices: [
+                    { text: "🚀 Cải cách toàn diện", consequence: "⚖️ +1 | 💰 -1 | ❤️ +1", effect: { balance: 1, budget: -1, stability: 1 } },
+                    { text: "📝 Từng bước", consequence: "⚖️ 0 | 💰 -1 | ❤️ 0", effect: { balance: 0, budget: -1, stability: 0 } },
+                    { text: "⏸️ Duy trì", consequence: "⚖️ -1 | 💰 0 | ❤️ -1", effect: { balance: -1, budget: 0, stability: -1 } }
+                ]
+            }
+        ];
+
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            gameState = {
+                health: 3,
+                stability: 10,
+                budget: 10,
+                balance: 0,
+                stage: 1,
+                boatPosition: 50,
+                isPlaying: true,
+                isPaused: false,
+                obstacles: [],
+                timeSinceLastQuestion: 0
+            };
+            
+            updateHUD();
+            startGameLoop();
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function handleKeyPress(e) {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                gameState.boatPosition = Math.max(5, gameState.boatPosition - 5);
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                gameState.boatPosition = Math.min(95, gameState.boatPosition + 5);
+            }
+            
+            document.getElementById('gameBoat').style.left = gameState.boatPosition + '%';
+        }
+
+        function startGameLoop() {
+            obstacleInterval = setInterval(() => {
+                if (!gameState.isPaused) spawnObstacle();
+            }, 1500);
+
+            gameInterval = setInterval(() => {
+                if (!gameState.isPaused) {
+                    moveObstacles();
+                    checkCollisions();
+                    gameState.timeSinceLastQuestion += 50;
+                    
+                    if (gameState.timeSinceLastQuestion >= 5000 && gameState.stage <= 10) {
+                        gameState.timeSinceLastQuestion = 0;
+                        showPolicyQuestion();
+                    }
+                }
+            }, 50);
+        }
+
+        function spawnObstacle() {
+            const canvas = document.getElementById('gameCanvas');
+            const obstacle = document.createElement('div');
+            obstacle.className = 'game-obstacle';
+            obstacle.textContent = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            obstacle.style.left = (Math.random() * 80 + 10) + '%';
+            obstacle.style.top = '-50px';
+            
+            gameState.obstacles.push({ element: obstacle, top: -50, left: parseFloat(obstacle.style.left) });
+            canvas.appendChild(obstacle);
+        }
+
+        function moveObstacles() {
+            const canvasHeight = document.getElementById('gameCanvas').offsetHeight;
+            
+            gameState.obstacles.forEach((obs, index) => {
+                obs.top += 3;
+                obs.element.style.top = obs.top + 'px';
+                
+                if (obs.top > canvasHeight) {
+                    obs.element.remove();
+                    gameState.obstacles.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            const boat = document.getElementById('gameBoat');
+            const boatRect = boat.getBoundingClientRect();
+            
+            gameState.obstacles.forEach((obs, index) => {
+                const obsRect = obs.element.getBoundingClientRect();
+                
+                if (!(boatRect.right < obsRect.left || boatRect.left > obsRect.right || 
+                      boatRect.bottom < obsRect.top || boatRect.top > obsRect.bottom)) {
+                    obs.element.remove();
+                    gameState.obstacles.splice(index, 1);
+                    handleCollision();
+                }
+            });
+        }
+
+        function showPolicyQuestion() {
+            pauseGame();
+            const question = policyQuestions[(gameState.stage - 1) % policyQuestions.length];
+            
+            document.getElementById('questionGame').style.display = 'block';
+            document.getElementById('repairGame').style.display = 'none';
+            document.getElementById('memoryGame').style.display = 'none';
+            document.getElementById('sequenceGame').style.display = 'none';
+            
+            document.getElementById('minigameTitle').textContent = question.title;
+            document.getElementById('minigameDescription').textContent = question.description;
+            document.getElementById('minigameRelation').textContent = `📌 ${question.relation}`;
+            
+            const choicesContainer = document.getElementById('minigameChoices');
+            choicesContainer.innerHTML = '';
+            
+            question.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerHTML = `
+                    <div class="choice-title">${choice.text}</div>
+                    <div class="choice-consequence">${choice.consequence}</div>
+                `;
+                btn.onclick = () => answerPolicyQuestion(choice.effect);
+                choicesContainer.appendChild(btn);
+            });
+            
+            minigameTimeLeft = 30;
+            document.getElementById('minigameTimer').textContent = minigameTimeLeft;
+            document.getElementById('minigameModal').style.display = 'flex';
+            
+            minigameTimer = setInterval(() => {
+                minigameTimeLeft--;
+                document.getElementById('minigameTimer').textContent = minigameTimeLeft;
+                if (minigameTimeLeft <= 0) {
+                    clearInterval(minigameTimer);
+                    endGame(false, 'timeout');
+                }
+            }, 1000);
+        }
+
+        function answerPolicyQuestion(effect) {
+            clearInterval(minigameTimer);
+            
+            gameState.balance += effect.balance;
+            gameState.budget += effect.budget;
+            gameState.stability += effect.stability;
+            
+            updateHUD();
+            
+            if (gameState.balance <= -5 || gameState.balance >= 5) {
+                endGame(false, 'balance');
+                return;
+            }
+            if (gameState.stability <= 0) {
+                endGame(false, 'stability');
+                return;
+            }
+            if (gameState.budget <= 0) {
+                endGame(false, 'budget');
+                return;
+            }
+            
+            gameState.stage++;
+            document.getElementById('currentStage').textContent = gameState.stage;
+            
+            if (gameState.stage > 10) {
+                endGame(true);
+                return;
+            }
+            
+            document.getElementById('minigameModal').style.display = 'none';
+            resumeGame();
+        }
+
+        function handleCollision() {
+            pauseGame();
+            
+            const types = ['repair', 'memory', 'sequence'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            document.getElementById('questionGame').style.display = 'none';
+            document.getElementById('repairGame').style.display = 'none';
+            document.getElementById('memoryGame').style.display = 'none';
+            document.getElementById('sequenceGame').style.display = 'none';
+            
+            if (type === 'repair') startRepairGame();
+            else if (type === 'memory') startMemoryGame();
+            else startSequenceGame();
+        }
+
+        function startRepairGame() {
+            document.getElementById('repairGame').style.display = 'block';
+            const grid = document.getElementById('repairGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'repair-cell';
+                if (Math.random() < 0.3) {
+                    cell.classList.add('hole');
+                    cell.textContent = '💥';
+                } else {
+                    cell.textContent = '🔧';
+                }
+                cell.onclick = () => {
+                    if (cell.classList.contains('hole')) {
+                        cell.classList.remove('hole');
+                        cell.classList.add('fixed');
+                        cell.textContent = '✅';
+                        if (document.querySelectorAll('.repair-cell.hole').length === 0) {
+                            clearInterval(minigameTimer);
+                            document.getElementById('minigameModal').style.display = 'none';
+                            resumeGame();
+                        }
+                    }
+                };
+                grid.appendChild(cell);
+            }
+            
+            startMinigameTimer();
+        }
+
+        function startMemoryGame() {
+            document.getElementById('memoryGame').style.display = 'block';
+            const grid = document.getElementById('memoryGrid');
+            grid.innerHTML = '';
+            memoryFlipped = [];
+            memoryMatched = 0;
+            
+            const icons = [...memoryIcons.slice(0, 6), ...memoryIcons.slice(0, 6)].sort(() => Math.random() - 0.5);
+            
+            icons.forEach((icon, i) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.textContent = icon;
+                card.dataset.icon = icon;
+                card.dataset.index = i;
+                card.onclick = () => flipCard(card);
+                grid.appendChild(card);
+            });
+            
+            startMinigameTimer();
+        }
+
+        function flipCard(card) {
+            if (card.classList.contains('flipped') || card.classList.contains('matched') || memoryFlipped.length >= 2) return;
+            
+            card.classList.add('flipped');
+            memoryFlipped.push(card);
+            
+            if (memoryFlipped.length === 2) {
+                if (memoryFlipped[0].dataset.icon === memoryFlipped[1].dataset.icon) {
+                    memoryFlipped.forEach(c => c.classList.add('matched'));
+                    memoryMatched += 2;
+                    memoryFlipped = [];
+                    
+                    if (memoryMatched === 12) {
+                        clearInterval(minigameTimer);
+                        document.getElementById('minigameModal').style.display = 'none';
+                        resumeGame();
+                    }
+                } else {
+                    setTimeout(() => {
+                        memoryFlipped.forEach(c => c.classList.remove('flipped'));
+                        memoryFlipped = [];
+                    }, 800);
+                }
+            }
+        }
+
+        function startSequenceGame() {
+            document.getElementById('sequenceGame').style.display = 'block';
+            const display = document.getElementById('sequenceDisplay');
+            display.innerHTML = '';
+            
+            const icons = ['🔴', '🟢', '🔵', '🟡', '🟠', '🟣', '⚪', '⚫', '🟤'];
+            sequencePattern = [];
+            sequenceInput = [];
+            sequenceShowing = true;
+            
+            for (let i = 0; i < 9; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'sequence-btn';
+                btn.textContent = icons[i];
+                btn.dataset.index = i;
+                btn.onclick = () => {
+                    if (sequenceShowing) return;
+                    sequenceInput.push(i);
+                    btn.classList.add('active');
+                    setTimeout(() => btn.classList.remove('active'), 200);
+                    checkSequence();
+                };
+                display.appendChild(btn);
+            }
+            
+            for (let i = 0; i < 4; i++) {
+                sequencePattern.push(Math.floor(Math.random() * 9));
+            }
+            
+            showSequence(display);
+        }
+
+        function showSequence(display) {
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i > 0) {
+                    display.children[sequencePattern[i-1]].classList.remove('active');
+                }
+                if (i < sequencePattern.length) {
+                    display.children[sequencePattern[i]].classList.add('active');
+                    i++;
+                } else {
+                    display.children[sequencePattern[i-1]].classList.remove('active');
+                    clearInterval(interval);
+                    sequenceShowing = false;
+                }
+            }, 600);
+            
+            startMinigameTimer();
+        }
+
+        function checkSequence() {
+            const display = document.getElementById('sequenceDisplay');
+            
+            for (let i = 0; i < sequenceInput.length; i++) {
+                if (sequenceInput[i] !== sequencePattern[i]) {
+                    display.children[sequenceInput[i]].classList.add('wrong');
+                    setTimeout(() => failMinigame(), 500);
+                    return;
+                }
+            }
+            
+            if (sequenceInput.length === sequencePattern.length) {
+                clearInterval(minigameTimer);
+                document.getElementById('minigameModal').style.display = 'none';
+                resumeGame();
+            }
+        }
+
+        function startMinigameTimer() {
+            minigameTimeLeft = 25;
+            document.getElementById('minigameTimer').textContent = minigameTimeLeft;
+            document.getElementById('minigameModal').style.display = 'flex';
+            
+            minigameTimer = setInterval(() => {
+                minigameTimeLeft--;
+                document.getElementById('minigameTimer').textContent = minigameTimeLeft;
+                if (minigameTimeLeft <= 0) {
+                    clearInterval(minigameTimer);
+                    failMinigame();
+                }
+            }, 1000);
+        }
+
+        function failMinigame() {
+            clearInterval(minigameTimer);
+            document.getElementById('minigameModal').style.display = 'none';
+            
+            gameState.health--;
+            updateHUD();
+            
+            if (gameState.health <= 0) {
+                endGame(false, 'health');
+            } else {
+                resumeGame();
+            }
+        }
+
+        function pauseGame() {
+            gameState.isPaused = true;
+            document.getElementById('gamePaused').style.display = 'block';
+        }
+
+        function resumeGame() {
+            gameState.isPaused = false;
+            document.getElementById('gamePaused').style.display = 'none';
+        }
+
+        function updateHUD() {
+            document.getElementById('stabilityValue').textContent = Math.max(0, gameState.stability);
+            document.getElementById('stabilityBar').style.width = `${Math.min(100, (gameState.stability / 10) * 100)}%`;
+            
+            document.getElementById('budgetValue').textContent = Math.max(0, gameState.budget);
+            document.getElementById('budgetBar').style.width = `${Math.min(100, (gameState.budget / 10) * 100)}%`;
+            
+            document.getElementById('healthValue').textContent = gameState.health;
+            
+            const position = ((gameState.balance + 4) / 8) * 100;
+            document.getElementById('balancePointer').style.left = `${position}%`;
+        }
+
+        function endGame(won, reason) {
+            gameState.isPlaying = false;
+            clearInterval(gameInterval);
+            clearInterval(obstacleInterval);
+            clearInterval(minigameTimer);
+            
+            // Đóng modal minigame trước khi hiển thị kết quả
+            document.getElementById('minigameModal').style.display = 'none';
+            
+            const modal = document.getElementById('resultModal');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const message = document.getElementById('resultMessage');
+
+            if (won) {
+                icon.textContent = '🏆';
+                title.textContent = 'Chiến thắng!';
+                message.innerHTML = `
+                    <p>Xin chúc mừng! Bạn đã hoàn thành 10 chặng thành công!</p>
+                    <p><strong>Kết quả:</strong></p>
+                    <p>❤️ Ổn định: ${gameState.stability}/10</p>
+                    <p>💰 Ngân sách: ${gameState.budget}/10</p>
+                    <p>⚖️ Cân bằng: ${gameState.balance}/4</p>
+                    <p>💚 Mạng còn: ${gameState.health}/3</p>
+                    <p><em>Bạn đã cân bằng chính sách xuất sắc!</em></p>
+                `;
+            } else {
+                icon.textContent = '😥';
+                title.textContent = 'Thất bại';
+                let reasonText = '';
+                if (reason === 'health') {
+                    reasonText = '<strong>Hết mạng!</strong> Bạn đã va chạm quá nhiều chướng ngại vật.';
+                } else if (reason === 'balance') {
+                    reasonText = gameState.balance <= -5 ? 
+                        '<strong>Thuyền lật về Bao cấp!</strong> Kinh tế sụp đổ.' :
+                        '<strong>Thuyền lật về Thị trường!</strong> Xã hội mất công bằng.';
+                } else if (reason === 'stability') {
+                    reasonText = '<strong>Ổn định XH sụp đổ!</strong> Nhân dân mất niềm tin.';
+                } else if (reason === 'budget') {
+                    reasonText = '<strong>Ngân sách cạn kiệt!</strong> Nhà nước vỡ nợ.';
+                } else if (reason === 'timeout') {
+                    reasonText = '<strong>Hết giờ quyết định!</strong> Bạn không trả lời kịp câu hỏi.';
+                }
+                message.innerHTML = `
+                    <p>${reasonText}</p>
+                    <p><strong>Chặng ${gameState.stage}/10</strong></p>
+                    <p>❤️ Ổn định: ${Math.max(0, gameState.stability)}/10</p>
+                    <p>💰 Ngân sách: ${Math.max(0, gameState.budget)}/10</p>
+                    <p>⚖️ Cân bằng: ${gameState.balance}/4</p>
+                    <p>💚 Mạng: ${gameState.health}/3</p>
+                `;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function restartGame() {
+            document.removeEventListener('keydown', handleKeyPress);
+            gameState.obstacles.forEach(obs => obs.element.remove());
+            gameState.obstacles = [];
+            
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('gameBoat').style.left = '50%';
+        }
+    </script>
+</body>
+</html>
